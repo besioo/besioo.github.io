@@ -212,11 +212,11 @@ exclude:
   - "*.gem"
   - "*.gemspec"
   - docs
-  - tools
   - README.md
   - LICENSE
   - purgecss.js
   - "*.config.js"
+  - "*.sh"
   - "package*.json"
 
 jekyll-archives:
