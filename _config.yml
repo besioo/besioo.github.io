@@ -35,6 +35,15 @@ github:
 twitter:
   username: twitter_username # change to your Twitter username
 
+nav:
+  - title: "Writeups"
+    url: /writeups/
+  - title: "Blogs"
+    url: /blog/
+  - title: "Toolkit"
+    url: /toolkit/
+  - title: "About"
+    url: /about/
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
