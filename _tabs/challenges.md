@@ -1,7 +1,7 @@
 ---
 title: Challenges
 icon: fas fa-terminal
-order: 1
+order: 4
 ---
 
 # Challenges
