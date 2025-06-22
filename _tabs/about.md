@@ -1,7 +1,7 @@
 ---
 title: About
 icon: fas fa-user
-order: 7
+order: 4
 ---
 
 # About Me
