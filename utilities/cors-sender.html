@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Tester (POST, PUT, DELETE, PATCH)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #0078D4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #0078D4;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #005A9E;
+        }
+
+        .checkbox-container {
+            margin: 10px 0;
+        }
+
+        #responseDisplay {
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Preserve line breaks, but wrap text */
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            overflow-wrap: break-word;  /* Ensure long words break correctly */
+            word-wrap: break-word;      /* Legacy support for older browsers */
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        footer a {
+            color: #0078D4;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS Tester</h1>
+
+    <div class="container">
+        <!-- Input for URL -->
+        <label for="urlInput">Request URL:</label>
+        <input type="text" id="urlInput" placeholder="Enter the URL to test" value="https://example.com">
+
+        <!-- Input for HTTP Method -->
+        <label for="methodInput">HTTP Method:</label>
+        <input type="text" id="methodInput" value="POST" placeholder="Enter HTTP method (e.g., POST, PUT)">
+
+        <!-- Textarea for POST data -->
+        <label for="postDataInput">POST Data (JSON format):</label>
+        <textarea id="postDataInput" rows="4" placeholder='{"key":"value"}'></textarea>
+
+        <!-- Checkbox for credentials -->
+        <div class="checkbox-container">
+            <label for="withCredentialsCheckbox">
+                <input type="checkbox" id="withCredentialsCheckbox"> Include Credentials (cookies)
+            </label>
+        </div>
+
+        <!-- Button to send request -->
+        <button onclick="sendCustomRequest()">Send Request</button>
+
+        <h2>Response</h2>
+        <div id="responseDisplay">Waiting for response...</div>
+    </div>
+
+    <footer>
+        Created with ❤️ for testing CORS requests. Learn more on <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_blank">MDN</a>.
+    </footer>
+
+    <script>
+        async function sendCustomRequest() {
+            const url = document.getElementById('urlInput').value;
+            const method = document.getElementById('methodInput').value.toUpperCase();
+            const postData = document.getElementById('postDataInput').value;
+            const withCredentials = document.getElementById('withCredentialsCheckbox').checked;
+            const responseDisplay = document.getElementById('responseDisplay');
+
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: withCredentials ? 'include' : 'same-origin',
+            };
+
+            if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                try {
+                    options.body = JSON.stringify(JSON.parse(postData));
+                } catch (error) {
+                    responseDisplay.textContent = `Invalid JSON format: ${error.message}`;
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const responseText = await response.text();
+
+                const headers = [...response.headers.entries()]
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join('\n');
+
+                const formattedResponse = `
+Status: ${response.status} ${response.statusText}
+
+Headers:
+${headers}
+
+Body:
+${responseText}
+                `;
+
+                responseDisplay.textContent = formattedResponse.trim();
+            } catch (error) {
+                responseDisplay.textContent = `Request failed: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
