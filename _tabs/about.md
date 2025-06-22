@@ -18,8 +18,7 @@ I specialize in:
 
 ## 🏆 Achievements
 
-- NASA Letter of Appreciation for finding critical vulnerabilities  
-- Discovered security issues in IBM, Adidas, Porsche, Comcast, Booking, and more  
+- Discovered security issues in NASA, IBM, Adidas, Porsche, Comcast, Booking, and more
 - Top 300 on Bugcrowd  
 - Top 1000 on HackerOne  
 
@@ -36,8 +35,7 @@ I specialize in:
 
 ## 📬 Contact
 
-- 📧 Email: [thebee0x@wearehackerone.com](mailto:thebee0x@wearehackerone.com)  
-- 📍 Location: Beheira, Egypt  
+- 📧 Email: [thebee0x@wearehackerone.com](mailto:thebee0x@wearehackerone.com)
 
 ## 🔗 Links
 
@@ -47,6 +45,7 @@ I specialize in:
 - [TryHackMe](https://tryhackme.com/p/thebee0x)  
 - [PentesterLab](https://pentesterlab.com/profile/thebee0x)  
 - [Medium Blog](https://medium.com/@besioo)
+- [LinkedIn](https://www.linkedin.com/in/ahmed-basiony-ab678919b/)
 
 ---
 
