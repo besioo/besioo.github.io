@@ -8,10 +8,6 @@ tags: [ssl, recon, bugbounty, nuclei, subdomains]
 
 ![SSL Wildcard](https://cdn-images-1.medium.com/max/1024/1*9tfRAXaFHfyDCtIWM-pZcQ.png)
 
-### بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
-
-## Intro
-
 In recon, a key focus is asset enumeration—collecting as many of a company’s assets as possible. The more assets you gather, the higher your chances of discovering potential vulnerabilities and bugs.
 
 Subdomains are often the gateway to a company’s hidden assets. By thoroughly enumerating subdomains, you increase your chances of discovering valuable entry points and potential vulnerabilities.
