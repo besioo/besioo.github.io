@@ -18,10 +18,9 @@
 
     // Get ?name=... from the URL
     const params = new URLSearchParams(window.location.search);
-    const name = params.get("name");
 
-    if (name && name.trim()) {
-      const safeName = sanitize(name.trim());
+    if (params.get("name")) {
+      const name = sanitize(params.get("name"));
     }
     document.getElementById("greeting").textContent = `Hello, ${name}!`;
   </script>
