@@ -43,7 +43,7 @@ I first tested if the script connected to arbitrary DB hosts. I entered a **Burp
 
 I then registered a **free SQL hosting** account from:
 
-- [http://freemysqlhosting.net](http://freemysqlhosting.net)
+- [https://freemysqlhosting.net](https://freemysqlhosting.net)
 
 Got credentials via email, added them to the form — and it worked! I was inside:
 
