@@ -20,7 +20,7 @@
     if (params.get("name")) {
       const name = sanitize(params.get("name"));
     }
-    document.getElementById("greeting").textContent = `Hello, ${name}!`;
+    document.getElementById("greeting").innerHTML = `Hello, ${name}!`;
   </script>
 </body>
 </html>
