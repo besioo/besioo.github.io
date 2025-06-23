@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greeting Page</title>
+</head>
+<body>
+  <h2 id="greeting">Welcome!</h2>
+  <p>Can you alert me!, I don't think so..</p>
+
+  <script>
+    // Sanitize using textContent (not innerHTML)
+    function sanitize(str) {
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      return temp.textContent;
+    }
+
+    // Get ?name=... from the URL
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get("name");
+
+    if (name && name.trim()) {
+      const safeName = sanitize(name.trim());
+    }
+    document.getElementById("greeting").textContent = `Hello, ${name}!`;
+  </script>
+</body>
+</html>
