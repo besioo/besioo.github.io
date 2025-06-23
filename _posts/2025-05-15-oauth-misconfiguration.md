@@ -2,46 +2,168 @@
 layout: post
 title: "OAuth Misconfiguration: Hijack User Accounts Without Abusing Redirects"
 date: 2025-05-15
-categories: [penetration-testing, bug-hunting, web-security]
+categories: [penetration-testing, web-security, bug-hunting]
+tags: [OAuth, token, auth, misconfiguration, hijacking]
 ---
 
-![OAuth Token Abuse](https://cdn-images-1.medium.com/max/1024/1*v_MYqiBJRuorhswKKhl_KA.png)
+![Intro](https://cdn-images-1.medium.com/max/1024/1*v_MYqiBJRuorhswKKhl_KA.png)
 
-OAuth makes logging in easy, but one small misconfiguration can lead to full account takeover. In this post, I’ll show how skipping a proper token issuer (iss) validation allows an attacker to hijack user accounts — **without abusing redirect URIs**. All it takes is a malicious OAuth app and a bit of trust in the wrong token.
 
-### What is OAuth?
+OAuth makes logging in easy, but one small misconfiguration can lead to full account takeover. In this post, I’ll show how skipping a proper token issuer (`iss`) validation allows an attacker to hijack user accounts — **without abusing redirect URIs**. All it takes is a malicious OAuth app and a bit of trust in the wrong token.
 
-**OAuth (Open Authorization)** is an open standard that allows applications to obtain limited access to user accounts on an HTTP service, such as Google or Facebook, without exposing the user’s credentials. It enables secure delegated access using access tokens issued by an authorization server.
+---
 
-### Sharing Access Token
+## What is OAuth?
 
-A common behavior when using OAuth is sharing the access token directly without exchanging the code server-side to get an access token.
+**OAuth (Open Authorization)** is an open standard that allows applications to obtain limited access to user accounts on an HTTP service, such as Google or Facebook, without exposing the user’s credentials.
 
-Example app: [https://besioo.github.io/google_auth/index.html](https://besioo.github.io/google_auth/index.html)
+It enables secure delegated access using access tokens issued by an authorization server. OAuth is widely used for “Log in with” functionality and API authorization.
 
-The OAuth request uses the parameter `response_type=token`. The user is redirected to the app with the access token included in the URL fragment, then it's used to call:
+- Official spec: [https://oauth.net/](https://oauth.net/)
+- RFC: OAuth 2.0 RFC 6749
+
+---
+
+## Sharing Access Token
+
+A common OAuth flow skips the code exchange entirely. Instead, the app asks the user to **share an access token** directly.
+
+This token typically includes limited scopes like:
+- user email
+- basic profile
+
+This is often enough to authenticate a user by validating their email.
+
+This pattern is common across providers like **Google**, **Facebook**, etc.
+
+---
+
+## In Practice
+
+Example app:  
+👉 [https://besioo.github.io/google_auth/index.html](https://besioo.github.io/google_auth/index.html)
+
+The app initiates an OAuth request with:
+
+- `response_type=token`  
+- Instead of exchanging `code` → `token` on the server
+
+Example auth URL:
+
+```text
+https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?
+  client_id=502214687020-0arr62kbk6oaiuq9p687sd4ij6fr9mjf.apps.googleusercontent.com
+  &redirect_uri=https%3A%2F%2Fbesioo.github.io%2Fgoogle_auth%2Findex.html
+  &response_type=token
+  &scope=openid%20email%20profile
+  &include_granted_scopes=true
+  &prompt=select_account
+```
+
+After login, Google redirects back to your app with the access token **in the URL fragment**.
+
+Your app uses this token to call:
+
+```bash
+curl 'https://www.googleapis.com/oauth2/v3/userinfo' \
+  -H "Authorization: Bearer ya29.a0AW4...."
+```
+
+![userinfo](https://cdn-images-1.medium.com/max/1024/1*abbpnqiM8IYQG4-sXto5NA.png)
+
+Then authenticate the user by email from the response.
+
+---
+
+## The Misconfiguration
+
+Let’s say:
+
+- App1 = attacker’s OAuth app
+- App2 = your web app using “Login with Google”
+
+If App2 doesn’t **validate** the `aud` or `iss` claims in the access token, it might accept **tokens issued to other clients** (like App1).
+
+That’s bad.
+
+It means the attacker can:
+
+1. Create a malicious OAuth app
+2. Trick a user into logging in
+3. Steal the access token
+4. Use it to log in to **your app**, if you're not validating tokens properly
+
+---
+
+## Real World Exploit
+
+A phishing-like scenario:
+
+1. Attacker sets up OAuth app
+2. User logs in & grants access
+3. Token gets leaked to attacker
+4. Attacker logs in to your app using the stolen token
+
+This works if your app trusts **any valid token** — even if it wasn’t issued for your client ID.
+
+---
+
+## Can It Be One Click?
+
+Yes.
+
+Use this trick: `prompt=none`
+
+Example:
+
+```text
+https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?
+  client_id=502214687020-0arr62kbk6oaiuq9p687sd4ij6fr9mjf.apps.googleusercontent.com
+  &redirect_uri=https%3A%2F%2Fbesioo.github.io%2Fgoogle_auth%2Findex.html
+  &response_type=token
+  &scope=openid%20email%20profile
+  &prompt=none
+```
+
+This **bypasses all consent screens** and redirects the user automatically.
+
+If the user is logged in and previously authorized the app — they won’t see any prompt.
+
+If logged in to multiple Google accounts, you can add:
 
 ```
-curl 'https://www.googleapis.com/oauth2/v3/userinfo' -H "Authorization: Bearer ya29.a0AW4..."
+authuser=0
 ```
 
-### Misconfiguration
+This will default to the first account silently.
 
-If App2 does **not** validate the token’s `aud` or `iss`, it may accept tokens from other apps. This allows unauthorized access.
+---
 
-**Exploit scenario:**
-- Attacker creates malicious OAuth app
-- Tricks users into logging in and sharing tokens
-- Uses tokens against vulnerable apps lacking validation
+## Impact
 
-### Real World Exploit
+A simple, non-malicious-looking OAuth app can:
 
-Using `prompt=none`, attackers can silently collect tokens if the user is already logged in. They can also bypass account selection with `authuser=0`.
+- Steal tokens
+- Bypass login protections
+- Take over accounts in your app
 
-### Impact
+This is a **single-click** account takeover — no redirect abuse needed.
 
-This misconfiguration enables **single-click account takeover**. With the access token, attackers can authenticate on vulnerable apps and hijack accounts.
+---
 
-### Conclusion
+## Conclusion
 
-OAuth is powerful but easy to misconfigure. Always validate the `iss` and `aud` claims of the token. Be cautious of third-party apps and audit your implementation to avoid these risks.
+OAuth is powerful, but misconfigurations can **break security** completely.
+
+🔒 Always validate:
+- `aud` — the token’s audience
+- `iss` — the token issuer
+
+If you trust any token without checking these fields — you’re vulnerable.
+
+Developers: review your token validation logic.  
+Users: be careful when logging in to unknown apps.
+
+---
+
+Feel free to reach out or comment if you want to chat about OAuth security.
