@@ -6,11 +6,6 @@ categories: [penetration-testing, bug-hunting, web-security]
 image: https://cdn-images-1.medium.com/max/1024/1*v_MYqiBJRuorhswKKhl_KA.png
 ---
 
-![cover](https://cdn-images-1.medium.com/max/1024/1*v_MYqiBJRuorhswKKhl_KA.png)
-
-### بِسْمِ اللَّـهِ الرَّحْمَـٰنِ الرَّحِيمِ
-
-### Intro
 
 OAuth makes logging in easy, but one small misconfiguration can lead to full account takeover. In this post, I’ll show how skipping a proper token issuer (iss) validation allows an attacker to hijack user accounts — **without abusing redirect URIs**. All it takes is a malicious OAuth app and a bit of trust in the wrong token.
 
