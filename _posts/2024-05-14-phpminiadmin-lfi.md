@@ -1,97 +1,106 @@
 ---
 layout: post
-title: "Recon Methods To Expand Your Attack Surface (Using SSL Certificates)"
-date: 2024-11-30
-categories: [bugbounty-writeup, cybersecurity, recon]
-tags: [ssl, recon, bugbounty, nuclei, subdomains]
+title: "phpminiadmin.php LFI Leads to FULL DB Access"
+date: 2024-05-14
+categories: [bugbounty-writeup, web-security, exploitation]
+tags: [LFI, MySQL, phpminiadmin, db-exploit]
 ---
 
-![SSL Wildcard](https://cdn-images-1.medium.com/max/1024/1*9tfRAXaFHfyDCtIWM-pZcQ.png)
 
-In recon, a key focus is asset enumeration—collecting as many of a company’s assets as possible. The more assets you gather, the higher your chances of discovering potential vulnerabilities and bugs.
+Websites have different options to manage their DB through GUI. One of the most common tools is phpMyAdmin.
 
-Subdomains are often the gateway to a company’s hidden assets. By thoroughly enumerating subdomains, you increase your chances of discovering valuable entry points and potential vulnerabilities.
-
-## SSL Certificate
-
-SSL certificates secure communication by verifying a server’s identity and include fields like the **Common Name (CN)** and **Subject Alternative Name (SAN)**. The CN usually lists the primary domain, while the SAN can cover multiple domains or subdomains, sometimes using wildcards (e.g., `*.example.com`).
+In this case, the target used another option — a standalone script called `phpminiadmin.php`.
 
 ---
 
-## Using SSL Certificate Data to Find More Assets
+## What is phpminiadmin.php?
 
-After performing a normal subdomain enumeration process, I usually use some methods to expand my attack service.
+**phpminiadmin** is a lightweight alternative to phpMyAdmin. It’s a single PHP script for quick and easy MySQL access via web interface.
 
-### Discover Wildcard Subdomains
+GitHub repo: [https://github.com/osalabs/phpminiadmin](https://github.com/osalabs/phpminiadmin)
 
-A common method is to pass the discovered subdomains to a subdomain enumeration tool (such as `subfinder`). While this may seem like a good idea, it can often be noisy, leading to unuseful results.
-
-Another method I see as more effective is to use SSL certificate data for those subdomains to discover wildcards within this domain.
-
-**First**, enumerate subdomains for `comcast.com`:
-
-```bash
-subfinder -d comcast.com -all -o comcast.com.subs
-```
-
-**Second**, grab the SSL certificate data (SAN, CN) with the `nuclei` template `ssl-dns-names`.
-
-```bash
-cat comcast.com.subs | nuclei -id ssl-dns-names -o comcast.com.subs.ssl
-```
-
-Now, extract wildcard subdomains from the output:
-
-```bash
-cat comcast.com.subs.ssl | cut -d " " -f 5 | sed 's/\[//' | sed 's/\]//' | tr "," "\n" | tr -d "\"" | grep -I "comcast.com$" | grep "*" | sort | uniq
-```
-
-![Wildcard Extraction](https://cdn-images-1.medium.com/max/1024/1*9tfRAXaFHfyDCtIWM-pZcQ.png)
-
-You can treat patterns like `*.xap.comcast.com` as separate domains and run subdomain enumeration tools or DNS fuzzing to uncover related assets.
+You can also detect it using this [Nuclei template](https://github.com/projectdiscovery/nuclei-templates/blob/fc23e21aabb1f48b86b8dc8a444beeabe492a668/http/exposed-panels/phpminiadmin-panel.yaml).
 
 ---
 
-### Bruteforce Virtualhosts Within IPs With Wildcard CN
+## Bug Story
 
-To identify virtual hosts behind an IP with wildcard subdomains:
+A Bugcrowd public program had a subdomain, `partner.test.com`, running a PHP app.
 
-**First**, resolve subdomains to IPs:
+While fuzzing, I discovered a publicly accessible `phpminiadmin.php` file.
 
-```bash
-cat comcast.com.subs | dnsx -a -resp-only | anew ips.txt
-```
+Opening it in the browser, I saw something like this:
 
-**Then**, extract SSL cert data from these IPs:
+![phpminiadmin](https://cdn-images-1.medium.com/max/1024/1*M1co4zuwHpvnUz0xjFB4dQ.png)
 
-```bash
-cat ips.txt | nuclei -id ssl-dns-names | anew ips.ssl.txt
-```
-
-![SSL Output](https://cdn-images-1.medium.com/max/1024/1*q1W1T2Yb-31qSsESM8VZJA.png)
-
-Look for a wildcard pattern:
-
-![Wildcard CN](https://cdn-images-1.medium.com/max/1024/1*1TpJM777NbGXbAsm6knilQ.png)
-
-Notice that `xfinity.com` and `comcat.com` are in scope.
+It showed a login panel. Interestingly, there were **advanced options** to input a custom SQL host.
 
 ---
 
-### Brute Force Host Headers
+## SSRF → Public MySQL
 
-Use a list of potential hostnames to uncover hidden services:
+I first tested if the script connected to arbitrary DB hosts. I entered a **Burp Collaborator URL** as the MySQL host and received a pingback → SSRF confirmed.
 
-```bash
-ffuf -u https://162.150.57.78:443 -H "Host: FUZZ.aws-np.identity.xfinity.com" -w ~/wordlists/2m-subdomains.txt -mc all -c -ac
-```
+I then registered a **free SQL hosting** account from:
 
-Another valuable resource for wildcard subdomains is:
+- [http://freemysqlhosting.net](http://freemysqlhosting.net)
 
-- **[crt.sh](https://crt.sh)**
+Got credentials via email, added them to the form — and it worked! I was inside:
 
-![crt.sh](https://cdn-images-1.medium.com/max/1024/1*xUpQA_YatTZ2-iALLp73lw.png)
+![connected](https://cdn-images-1.medium.com/max/1024/1*WwXmGCwy2WjiudEweb6sSg.png)
 
 ---
 
-Thanks for reading! 🚀
+## Now It’s LFI Time
+
+MySQL supports reading files from the server using `LOAD DATA`.
+
+I created a table named `test`, then ran:
+
+```sql
+LOAD DATA LOCAL INFILE "/etc/passwd" INTO TABLE test FIELDS TERMINATED BY '\n';
+```
+
+Then:
+
+```sql
+SELECT * FROM test;
+```
+
+I successfully dumped the `/etc/passwd` file 🎉
+
+---
+
+## Reading Source Code
+
+I wanted more impact. I noticed the script linked to `phpinfo`, which I accessed after login.
+
+From `phpinfo`, I got `DOCUMENT_ROOT` — the base directory for the web app.
+
+I then tried to read source files using:
+
+```sql
+LOAD DATA LOCAL INFILE "DOCUMENT_ROOT/admin/config.php" INTO TABLE test FIELDS TERMINATED BY '\n';
+```
+
+And this gave me the contents of `config.php`:
+
+![config.php](https://cdn-images-1.medium.com/max/1024/1*Wfook0X-BkewUHGeT1GYGg.png)
+
+It referenced another file: `config_prod.php` containing **MySQL credentials**:
+
+![config_prod](https://cdn-images-1.medium.com/max/1024/1*N9KWpKkXbTfCgmyVTz32ug.png)
+
+I reused the script again to connect with these creds — and got **full database access**:
+
+![DB](https://cdn-images-1.medium.com/max/1024/1*1fOXHsTksmompgOeGRlcZQ.png)
+
+---
+
+### Final Thoughts
+
+- If you see `phpminiadmin.php` in the wild, **investigate it**.
+- If custom SQL hosts are allowed, SSRF → LFI → DB takeover is possible.
+- Always sanitize and lock down these admin tools.
+
+Thanks for reading!
