@@ -10,6 +10,7 @@ lang: en
 
 include:
   - toolkit
+  - tools
   - challenges
 
 # Change to your timezone › https://kevinnovak.github.io/Time-Zone-Picker
