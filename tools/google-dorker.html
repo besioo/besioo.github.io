@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Dorker Tool</title>
+  <style>
+    body {
+      background-color: #0e0e0e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2em;
+    }
+    h1 {
+      color: #00e676;
+      font-size: 2em;
+    }
+    input[type="text"] {
+      width: 300px;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #333;
+      border-radius: 5px;
+      background-color: #1e1e1e;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    ul {
+      margin-top: 1em;
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 10px 0;
+      background: #1a1a1a;
+      padding: 10px;
+      border-left: 4px solid #00e676;
+      border-radius: 4px;
+    }
+    a {
+      color: #29b6f6;
+      text-decoration: none;
+      word-break: break-word;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Google Dorker Tool</h1>
+  <label for="domainInput">Enter domain (e.g., example.com):</label>
+  <input type="text" id="domainInput" placeholder="example.com" oninput="generateDorks()" />
+
+  <div style="margin-top: 2em;">
+    <h2>Add Custom Dork</h2>
+    <input type="text" id="customLabel" placeholder="Label (e.g. Custom Test)" />
+    <input type="text" id="customQuery" placeholder="Query (use {domain})" />
+    <button onclick="addCustomDork()">➕ Add Dork</button>
+  </div>
+  <ul id="results"></ul>
+
+
+<script>
+  const defaultDorks = [
+    { label: "Subdomains", query:'site:*.{domain}' },
+    { label: "Deep Subdomains", query:'site:*.*.{domain}' },
+    { label: "Exclude Common Subdomains", query:'site:*.{domain} -www -blog -support -help -community -developer' },
+    { label: "Server Side Scripts", query: 'site:{domain} ext:php | ext:php2 | ext:jsp | ext:cgi | ext:aspx | ext:asp | ext:ashx | ext:asmx | ext:do | ext:pl | ext:py' },
+    { label: "Exposed Config Files", query: 'site:{domain} ext:xml | ext:conf | ext:cfg | ext:ini | ext:txt' },
+    { label: "Login Pages", query: 'site:{domain} inurl:login | intitle:"sign in" | inurl:auth' },
+    { label: "Database Files", query: 'site:{domain} ext:sql | ext:mdb | ext:dbf' },
+    { label: "WordPress", query: 'site:{domain} inurl:wp-content | inurl:plugins | inurl:themes' },
+    { label: "Log Files", query: 'site:{domain} ext:log' },
+    { label: "API Endpoints", query: 'site:{domain} inurl:api | inurl:/v1 | inurl:/v2' },
+    { label: "Swagger UI", query: 'site:{domain} intext:"Swagger UI" intitle:"Swagger UI"' },
+    { label: "Backup Files", query: 'site:{domain} ext:bak | ext:old | ext:backup | ext:bkp' },
+    { label: "Public Documents", query: 'site:{domain} ext:pdf | ext:doc | ext:xls | ext:ppt | ext:csv' },
+    { label: "Install/Setup Files", query: 'site:{domain} inurl:install | inurl:setup | inurl:readme' },
+    { label: "Directory Listing", query: 'site:{domain} intitle:"index of"' },
+    { label: "SQL Errors", query: 'site:{domain} intext:"sql syntax near" | intext:"syntax error has occurred" | intext:"incorrect syntax near"' },
+    { label: "phpinfo()", query: 'site:{domain} ext:php intitle:phpinfo "published by the PHP Group"' },
+    { label: "Exposed Git Repos", query: 'site:{domain} ".git/config"' },
+    { label: "Apache Status", query: 'site:{domain} intitle:"Apache Status"' },
+    { label: "API Keys", query: 'site:{domain} intext:"api_key" | intext:"apikey" | intext:"APIKEY"' },
+    { label: "Cloud Buckets", query: 'site:{domain} inurl:"storage.googleapis.com" | inurl:"s3.amazonaws.com"' }
+  ];
+
+  function getDorks() {
+    const stored = JSON.parse(localStorage.getItem('customDorks') || '[]');
+    return [...defaultDorks, ...stored];
+  }
+
+  function generateDorks() {
+    const domain = document.getElementById("domainInput").value.trim();
+    const results = document.getElementById("results");
+    results.innerHTML = "";
+
+    if (!domain) return;
+
+    getDorks().forEach(dork => {
+      const query = dork.query.replace(/{domain}/g, domain);
+      const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${dork.label}:</strong> <br><a href="${url}" target="_blank" class="generated-link">${query}</a>`;
+      results.appendChild(li);
+    });
+  }
+
+
+  function addCustomDork() {
+    const label = document.getElementById("customLabel").value.trim();
+    const query = document.getElementById("customQuery").value.trim();
+
+    if (!label || !query || !query.includes('{domain}')) {
+      alert("Both fields are required and query must include '{domain}'");
+      return;
+    }
+
+    const customDorks = JSON.parse(localStorage.getItem('customDorks') || '[]');
+    customDorks.push({ label, query });
+    localStorage.setItem('customDorks', JSON.stringify(customDorks));
+
+    document.getElementById("customLabel").value = '';
+    document.getElementById("customQuery").value = '';
+
+    generateDorks();
+  }
+</script>
+
+</body>
+</html>
