@@ -4,7 +4,6 @@ icon: fas fa-wrench
 order: 2
 ---
 
-# Tools
+- [Google Dorker](/tools/google-dorker.html)
 
-A collection of tools like CORS tester, payload generators, and helpful scripts.
-- [Google Dorker](/toolkit/google_dorker.html)
+- [CORS Request Sender](/tools/cors-sender.html)
