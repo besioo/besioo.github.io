@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORS Tester (POST, PUT, DELETE, PATCH)</title>
+    <title>CORS Tester (POST, PUT, DELETE, PATCH, GET)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,11 +71,11 @@
             border: 1px solid #ddd;
             padding: 15px;
             border-radius: 4px;
-            white-space: pre-wrap; /* Preserve line breaks, but wrap text */
+            white-space: pre-wrap;
             font-family: "Courier New", Courier, monospace;
             font-size: 0.9rem;
-            overflow-wrap: break-word;  /* Ensure long words break correctly */
-            word-wrap: break-word;      /* Legacy support for older browsers */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
         footer {
@@ -105,10 +105,10 @@
 
         <!-- Input for HTTP Method -->
         <label for="methodInput">HTTP Method:</label>
-        <input type="text" id="methodInput" value="POST" placeholder="Enter HTTP method (e.g., POST, PUT)">
+        <input type="text" id="methodInput" value="POST" placeholder="Enter HTTP method (e.g., GET, POST, PUT)">
 
         <!-- Textarea for POST data -->
-        <label for="postDataInput">POST Data (JSON format):</label>
+        <label for="postDataInput">Request Body (JSON format):</label>
         <textarea id="postDataInput" rows="4" placeholder='{"key":"value"}'></textarea>
 
         <!-- Checkbox for credentials -->
@@ -126,28 +126,28 @@
     </div>
 
     <footer>
-        Created with ❤️ for testing CORS requests. Learn more on <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_blank">MDN</a>.
+        Created with ❤️ for testing CORS requests. Learn more on 
+        <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS" target="_blank">MDN</a>.
     </footer>
 
     <script>
         async function sendCustomRequest() {
-            const url = document.getElementById('urlInput').value;
-            const method = document.getElementById('methodInput').value.toUpperCase();
-            const postData = document.getElementById('postDataInput').value;
+            const url = document.getElementById('urlInput').value.trim();
+            const method = document.getElementById('methodInput').value.trim().toUpperCase();
+            const postData = document.getElementById('postDataInput').value.trim();
             const withCredentials = document.getElementById('withCredentialsCheckbox').checked;
             const responseDisplay = document.getElementById('responseDisplay');
 
             const options = {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 credentials: withCredentials ? 'include' : 'same-origin',
             };
 
+            // Add body + JSON header only for methods that support it
             if (['POST', 'PUT', 'PATCH'].includes(method)) {
                 try {
-                    options.body = JSON.stringify(JSON.parse(postData));
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(JSON.parse(postData || "{}"));
                 } catch (error) {
                     responseDisplay.textContent = `Invalid JSON format: ${error.message}`;
                     return;
