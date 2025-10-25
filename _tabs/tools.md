@@ -7,3 +7,5 @@ order: 2
 - [Google Dorker](/tools/google-dorker.html)
 
 - [CORS Request Sender](/tools/cors-sender.html)
+
+- [Search Engines](/tools/search_engines.html)
