@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .search-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .search-link {
+            display: block;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            font-size: 14px;
+        }
+        .search-link:hover {
+            background: #e9ecef;
+            border-color: #007cba;
+        }
+        .current-search {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .search-type {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Multi-Search Tool</h2>
+        
+        <div class="input-group">
+            <input type="text" id="subdomainInput" placeholder="Enter subdomain (e.g., example.com)" autofocus>
+            <input type="text" id="keywordInput" placeholder="Enter keyword (optional)">
+        </div>
+        
+        <div id="currentSearch" class="current-search" style="display: none;">
+            Searching for: <strong id="currentQuery"></strong>
+        </div>
+        
+        <div class="search-links" id="searchLinks">
+            <!-- Search links will appear here automatically -->
+        </div>
+    </div>
+
+    <script>
+        const searchEngines = [
+            {
+                name: "DuckDuckGo",
+                url: "https://duckduckgo.com/?q={query}",
+                type: "site"
+            },
+            {
+                name: "Google", 
+                url: "https://www.google.com/search?q={query}",
+                type: "site"
+            },
+            {
+                name: "Bing",
+                url: "https://www.bing.com/search?q={query}",
+                type: "site"
+            },
+            {
+                name: "Startpage",
+                url: "https://www.startpage.com/sp/search?query={query}",
+                type: "site"
+            },
+            {
+                name: "Yahoo",
+                url: "https://search.yahoo.com/search?p={query}",
+                type: "site"
+            },
+            {
+                name: "Yandex",
+                url: "https://yandex.com/search/?text={query}",
+                type: "site"
+            },
+            {
+                name: "Ecosia",
+                url: "https://www.ecosia.org/search?q={query}",
+                type: "site"
+            },
+            {
+                name: "Baidu",
+                url: "https://www.baidu.com/s?wd={query}",
+                type: "site"
+            },
+            {
+                name: "Seznam",
+                url: "https://search.seznam.cz/?q={query}",
+                type: "site"
+            },
+            {
+                name: "GitHub",
+                url: "https://github.com/search?q={query}&type=code",
+                type: "keyword"
+            }
+        ];
+
+        function updateSearchLinks() {
+            const subdomain = document.getElementById('subdomainInput').value.trim();
+            const keyword = document.getElementById('keywordInput').value.trim();
+            const searchLinks = document.getElementById('searchLinks');
+            const currentSearch = document.getElementById('currentSearch');
+            const currentQuery = document.getElementById('currentQuery');
+
+            searchLinks.innerHTML = '';
+
+            if (!subdomain) {
+                currentSearch.style.display = 'none';
+                return;
+            }
+
+            // Generate queries
+            const siteQuery = `site:${subdomain}`;
+            const keywordQuery = keyword ? `${keyword} ${subdomain}` : subdomain;
+            
+            // Update current search display
+            let queryText = `"site:${subdomain}"`;
+            if (keyword) {
+                queryText += ` and "${keyword} ${subdomain}"`;
+            }
+            currentQuery.textContent = queryText;
+            currentSearch.style.display = 'block';
+
+            // Generate search engine links for site search
+            searchEngines.forEach(engine => {
+                let query, displayType;
+                
+                if (engine.type === "keyword" && keyword) {
+                    query = encodeURIComponent(keywordQuery);
+                    displayType = "keyword search";
+                } else {
+                    query = encodeURIComponent(siteQuery);
+                    displayType = "site search";
+                }
+
+                const searchUrl = engine.url.replace('{query}', query);
+                
+                const link = document.createElement('a');
+                link.href = searchUrl;
+                link.target = '_blank';
+                link.className = 'search-link';
+                link.innerHTML = `
+                    ${engine.name}
+                    <div class="search-type">${displayType}</div>
+                `;
+                
+                searchLinks.appendChild(link);
+            });
+        }
+
+        // Update links automatically on input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('subdomainInput').addEventListener('input', updateSearchLinks);
+            document.getElementById('keywordInput').addEventListener('input', updateSearchLinks);
+        });
+    </script>
+</body>
+</html>
